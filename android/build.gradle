@@ -8,8 +8,6 @@ buildscript {
     }
 
     dependencies {
-        // AGP 9.0.1 e Kotlin 2.1.0
-        classpath 'com.android.tools.build:gradle:9.0.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
