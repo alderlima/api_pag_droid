@@ -1,11 +1,11 @@
-name: Android APK Release
+name: Android APK Release (ARM64)
 
 on:
   push:
     branches: [ main, master, develop ]
   pull_request:
     branches: [ main, master, develop ]
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   build:
@@ -15,50 +15,51 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Java 21 (necessário para AGP 8+)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
+      # Flutter com cache ativado
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Clean Flutter
-        run: flutter clean
+      # Cache do Pub (dependências Dart)
+      - name: Cache Pub
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      # Cache Gradle extra
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Generate keystore
-        run: |
-          mkdir -p android/app
-          keytool -genkeypair \
-            -alias testkey \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -keystore android/app/test.keystore \
-            -storepass android \
-            -keypass android \
-            -dname "CN=Test,O=Test,C=BR"
+      # Build somente ARM64
+      - name: Build APK (ARM64 only)
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
 
-      - name: Create key.properties
-        run: |
-          echo "storePassword=android" > android/key.properties
-          echo "keyPassword=android" >> android/key.properties
-          echo "keyAlias=testkey" >> android/key.properties
-          echo "storeFile=test.keystore" >> android/key.properties
-
-      - name: Build APK
-        run: flutter build apk --release --target-platform android-arm64
-
-      - name: Upload APK
+      - name: Upload APK ARM64
         uses: actions/upload-artifact@v4
         with:
           name: app-release-arm64
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           retention-days: 30
