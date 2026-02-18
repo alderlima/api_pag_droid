@@ -6,7 +6,7 @@ version: 1.0.0+1
 
 environment:
   # O SDK foi atualizado para suportar as APIs mais recentes de 2026
-  sdk: '>=3.11.0 <4.0.0'
+  sdk: '>=3.32.0 <4.0.0'
 
 dependencies:
   flutter:
