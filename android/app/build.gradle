@@ -1,30 +1,15 @@
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    // O plugin do Flutter deve vir por último
+    id "kotlin-android"
+    // O plugin do Flutter deve ser aplicado para que as tarefas de build do Flutter funcionem
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
+    // Definido aqui para remover a necessidade do 'package' no AndroidManifest.xml
     namespace = "com.macronotify.macro_notify"
-    compileSdk = 35 // Atualizado para suportar Kotlin 2.1
+    compileSdk = 35
 
-    defaultConfig {
-        applicationId = "com.exemplo.api_pag_droid"
-        minSdk = 21
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
-    }
-
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.debug // Ajuste para sua chave de produção
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
-    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -33,4 +18,37 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    defaultConfig {
+        // O applicationId identifica seu app na Play Store
+        applicationId = "com.macronotify.macro_notify"
+        
+        // O Flutter geralmente gerencia minSdk e targetSdk via local.properties, 
+        // mas defini-los aqui manualmente como você fez também funciona:
+        minSdk = 21
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            // ATENÇÃO: Para publicar, você precisará configurar o signingConfig de release
+            signingConfig = signingConfigs.debug 
+            
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Esta seção é OBRIGATÓRIA para o Flutter funcionar
+flutter {
+    source = "../.."
+}
+
+dependencies {
+    // Importa as dependências padrão do Kotlin se necessário
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
