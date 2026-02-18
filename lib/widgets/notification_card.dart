@@ -1,0 +1,173 @@
+import 'package:flutter/material.dart';
+import '../models/notification_model.dart';
+
+class NotificationCard extends StatefulWidget {
+  final NotificationModel notification;
+  final VoidCallback onDelete;
+
+  const NotificationCard({
+    Key? key,
+    required this.notification,
+    required this.onDelete,
+  }) : super(key: key);
+
+  @override
+  State<NotificationCard> createState() => _NotificationCardState();
+}
+
+class _NotificationCardState extends State<NotificationCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              child: Icon(
+                widget.notification.action == 'posted'
+                    ? Icons.notifications_active
+                    : Icons.notifications_off,
+              ),
+            ),
+            title: Text(
+              widget.notification.title.isEmpty
+                  ? 'Sem Título'
+                  : widget.notification.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.notification.packageName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  widget.notification.formattedTime,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                ),
+              ],
+            ),
+            trailing: PopupMenuButton(
+              itemBuilder: (BuildContext context) => [
+                PopupMenuItem(
+                  child: const Text('Expandir'),
+                  onTap: () {
+                    setState(() => _isExpanded = !_isExpanded);
+                  },
+                ),
+                PopupMenuItem(
+                  child: const Text('Deletar'),
+                  onTap: widget.onDelete,
+                ),
+              ],
+            ),
+            onTap: () {
+              setState(() => _isExpanded = !_isExpanded);
+            },
+          ),
+          if (_isExpanded)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(),
+                  _buildDetailRow(context, 'Pacote', widget.notification.packageName),
+                  _buildDetailRow(context, 'Ação', widget.notification.action),
+                  _buildDetailRow(context, 'ID', widget.notification.id.toString()),
+                  const SizedBox(height: 12),
+                  if (widget.notification.title.isNotEmpty)
+                    _buildDetailSection(context, 'Título', widget.notification.title),
+                  if (widget.notification.text.isNotEmpty)
+                    _buildDetailSection(context, 'Texto', widget.notification.text),
+                  if (widget.notification.subText.isNotEmpty)
+                    _buildDetailSection(context, 'Subtítulo', widget.notification.subText),
+                  if (widget.notification.bigText.isNotEmpty)
+                    _buildDetailSection(context, 'Texto Grande', widget.notification.bigText),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: widget.onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Deletar Notificação'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(BuildContext context, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
