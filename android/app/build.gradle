@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.exemplo.api_pag_droid" // Use o seu package name
+    namespace = "com.macronotify.macro_notify"
     compileSdk = 35 // Atualizado para suportar Kotlin 2.1
 
     defaultConfig {
