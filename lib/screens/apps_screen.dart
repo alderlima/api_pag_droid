@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:device_apps/device_apps.dart';
+import 'package:installed_apps/installed_apps.dart';
 import '../services/notification_service.dart';
 import '../models/app_model.dart';
 
@@ -12,7 +12,7 @@ class AppsScreen extends StatefulWidget {
 }
 
 class _AppsScreenState extends State<AppsScreen> {
-  List<Application> _installedApps = [];
+  List<AppInfo> _installedApps = [];
   bool _isLoadingApps = false;
   String _searchQuery = '';
 
@@ -25,9 +25,9 @@ class _AppsScreenState extends State<AppsScreen> {
   Future<void> _loadInstalledApps() async {
     setState(() => _isLoadingApps = true);
     try {
-      final apps = await DeviceApps.getInstalledApplications(
-        includeAppIcons: true,
-        includeSystemApps: true,
+      final apps = await InstalledApps.getInstalledApps(
+        true,   // includeSystemApps
+        true,   // includeIcons
       );
       setState(() {
         _installedApps = apps;
@@ -39,13 +39,13 @@ class _AppsScreenState extends State<AppsScreen> {
     }
   }
 
-  List<Application> get _filteredApps {
+  List<AppInfo> get _filteredApps {
     if (_searchQuery.isEmpty) {
       return _installedApps;
     }
     return _installedApps
         .where((app) =>
-            app.appName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            app.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
             app.packageName.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
   }
@@ -116,14 +116,14 @@ class _AppsScreenState extends State<AppsScreen> {
                                 vertical: 4,
                               ),
                               child: ListTile(
-                                leading: app is ApplicationWithIcon
+                                leading: app.icon != null
                                     ? Image.memory(
                                         app.icon,
                                         width: 40,
                                         height: 40,
                                       )
                                     : const Icon(Icons.android),
-                                title: Text(app.appName),
+                                title: Text(app.name),
                                 subtitle: Text(
                                   app.packageName,
                                   maxLines: 1,
@@ -135,7 +135,7 @@ class _AppsScreenState extends State<AppsScreen> {
                                     if (value) {
                                       service.enableApp(
                                         app.packageName,
-                                        app.appName,
+                                        app.name,
                                       );
                                     } else {
                                       service.disableApp(app.packageName);

@@ -227,3 +227,8 @@ Para dúvidas ou problemas:
 
 **Versão**: 1.0.0  
 **Última Atualização**: 2024
+
+git status
+git add .
+git commit -m "api_pag_droid"
+git push origin main
