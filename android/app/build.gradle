@@ -1,23 +1,19 @@
 plugins {
     id "com.android.application"
-    id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
     namespace = "com.macronotify.macro_notify"
-    // Atualizado para Android 15 (exigido pelo AGP 9)
     compileSdkVersion 35 
-    ndkVersion "27.0.12077973" // Versão estável para 2026
+    ndkVersion "27.0.12077973"
 
     compileOptions {
-        // AGP 9 exige Java 17 ou superior
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        // Alinhado com o Java 17
         jvmTarget = '17'
     }
 
@@ -27,20 +23,16 @@ android {
 
     defaultConfig {
         applicationId "com.macronotify.macro_notify"
-        // MinSdk 24 é o padrão recomendado em 2026 para NotificationListenerService
         minSdkVersion 24 
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        
-        // MultiDex é nativo desde o SDK 21, mas mantido se preferir
         multiDexEnabled true
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            // Recomendado ativar para produção futuramente
             minifyEnabled false
             shrinkResources false
         }
@@ -52,11 +44,7 @@ flutter {
 }
 
 dependencies {
-    // A biblioteca stdlib agora é implícita no Kotlin 2.0+, 
-    // mas atualizada para a versão JDK 8 se necessário.
     implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
-    
-    // Versões estáveis de 2026
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.core:core-ktx:1.15.0'
     implementation 'androidx.multidex:multidex:2.0.1'
