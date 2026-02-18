@@ -22,16 +22,14 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-    defaultConfig {
+        defaultConfig {
         applicationId "com.macronotify.macro_notify"
-        minSdkVersion 21
-        targetSdkVersion 34
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-        
-        // Suporte AndroidX
-        multiDexEnabled true
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
     }
+
 
     buildTypes {
         release {

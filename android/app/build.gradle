@@ -22,13 +22,16 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
-        defaultConfig {
+    defaultConfig {
         applicationId "com.macronotify.macro_notify"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0.0"
+        
+        // O project.property evita o erro se a variável não existir
+        versionCode (project.findProperty('flutterVersionCode') ?: '1').toInteger()
+        versionName (project.findProperty('flutterVersionName') ?: '1.0.0')
     }
+
 
 
     buildTypes {
