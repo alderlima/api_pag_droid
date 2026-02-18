@@ -1,29 +1,29 @@
 plugins {
     id "com.android.application"
-    // Adicione o kotlin-android ANTES do flutter para o Gradle registrar o kotlinOptions corretamente
-    id "org.jetbrains.kotlin.android" 
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
     namespace = "com.macronotify.macro_notify"
-    compileSdk = 35
+    
+    compileSdk = 35 
     ndkVersion = "27.0.12077973"
 
+    // ESSENCIAL: Adicione estes dois blocos abaixo
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
-    // Agora o Gradle vai reconhecer este método
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '21'
     }
 
     defaultConfig {
         applicationId = "com.macronotify.macro_notify"
         minSdk = 24
         targetSdk = 35
+        // Certifique-se que estas variáveis existem ou use flutter.versionCode
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
