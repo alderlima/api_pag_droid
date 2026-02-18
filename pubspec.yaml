@@ -5,33 +5,37 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0' # Atualizado para melhor suporte ao Gradle 8
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.2
-  sqflite: ^2.3.0
-  path: ^1.8.3
+  cupertino_icons: ^1.0.8 # Atualizado
+  sqflite: ^2.3.3 # Atualizado
+  path: ^1.9.0 # Atualizado
   intl: ^0.19.0
-  flutter_local_notifications: ^16.1.0
-  workmanager: ^0.5.1
-  permission_handler: ^12.0.1
-  device_apps: ^2.2.0
-  shared_preferences: ^2.2.2
-  provider: ^6.1.0
-  google_fonts: ^6.1.0
-  flutter_animate: ^4.2.0
-  uuid: ^4.0.0
-  connectivity_plus: ^5.0.0
+  flutter_local_notifications: ^17.2.2 # Atualizada (importante para Android 14)
+  workmanager: ^0.5.2 # Atualizado
+  permission_handler: ^11.3.1 # Versão estável recomendada
+  
+  # SUBSTITUIÇÃO CRÍTICA:
+  # O device_apps original (2.2.0) quebra o build no Android moderno.
+  # Use esta versão mantida pela comunidade que resolve o erro de 'namespace'.
+  device_apps:
+    git:
+      url: https://github.com
+  
+  shared_preferences: ^2.2.3 # Atualizado
+  provider: ^6.1.2 # Atualizado
+  google_fonts: ^6.2.1 # Atualizado
+  flutter_animate: ^4.5.0 # Atualizado
+  uuid: ^4.4.0 # Atualizado
+  connectivity_plus: ^6.0.3 # Atualizada (v5.0.0 tinha bugs de permissão)
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0 # Atualizado
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/icons/
