@@ -3,9 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:device_apps/device_apps.dart';
 import '../services/notification_service.dart';
 import '../models/app_model.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:device_apps/device_apps.dart';
-
 
 class AppsScreen extends StatefulWidget {
   const AppsScreen({Key? key}) : super(key: key);
