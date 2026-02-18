@@ -13,7 +13,7 @@ class AppsScreen extends StatefulWidget {
 }
 
 class _AppsScreenState extends State<AppsScreen> {
-  List<InstalledAppInfo> _installedApps = [];
+  List<Map<String, dynamic>> _installedApps = [];
   bool _isLoadingApps = false;
   String _searchQuery = '';
 
@@ -23,20 +23,18 @@ class _AppsScreenState extends State<AppsScreen> {
     _loadInstalledApps();
   }
 
-  /// 🔹 Carrega aplicativos instalados
   Future<void> _loadInstalledApps() async {
     setState(() => _isLoadingApps = true);
 
     try {
-      final dynamic appsRaw =
-          await InstalledApps.getInstalledApps(true, true);
-
-      // Conversão segura para evitar Object?
-      final List<InstalledAppInfo> typedApps =
-          List<InstalledAppInfo>.from(appsRaw);
+      final apps = await InstalledApps.getInstalledApps(
+        true,
+        true,
+      );
 
       setState(() {
-        _installedApps = typedApps;
+        _installedApps =
+            List<Map<String, dynamic>>.from(apps);
       });
     } catch (e) {
       debugPrint('Erro ao carregar apps: $e');
@@ -45,23 +43,20 @@ class _AppsScreenState extends State<AppsScreen> {
     setState(() => _isLoadingApps = false);
   }
 
-  /// 🔹 Filtro de busca
-  List<InstalledAppInfo> get _filteredApps {
+  List<Map<String, dynamic>> get _filteredApps {
     if (_searchQuery.isEmpty) return _installedApps;
 
-    return _installedApps
-        .where((InstalledAppInfo app) {
-          final name = app.name ?? '';
-          final package = app.packageName ?? '';
+    return _installedApps.where((app) {
+      final name = (app['name'] ?? '').toString();
+      final package = (app['packageName'] ?? '').toString();
 
-          return name
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()) ||
-              package
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase());
-        })
-        .toList();
+      return name
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          package
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   @override
@@ -70,7 +65,6 @@ class _AppsScreenState extends State<AppsScreen> {
       builder: (context, service, _) {
         return Column(
           children: [
-            /// 🔍 Campo de busca
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
@@ -94,8 +88,6 @@ class _AppsScreenState extends State<AppsScreen> {
                 ),
               ),
             ),
-
-            /// 📱 Lista de apps
             Expanded(
               child: _isLoadingApps
                   ? const Center(child: CircularProgressIndicator())
@@ -106,12 +98,18 @@ class _AppsScreenState extends State<AppsScreen> {
                               const EdgeInsets.symmetric(horizontal: 8),
                           itemCount: _filteredApps.length,
                           itemBuilder: (context, index) {
-                            final InstalledAppInfo app =
-                                _filteredApps[index];
+                            final app = _filteredApps[index];
 
-                            final bool isEnabled = service.enabledApps
+                            final name =
+                                (app['name'] ?? '').toString();
+                            final package =
+                                (app['packageName'] ?? '').toString();
+                            final icon =
+                                app['icon'] as Uint8List?;
+
+                            final isEnabled = service.enabledApps
                                 .any((a) =>
-                                    a.packageName == app.packageName);
+                                    a.packageName == package);
 
                             return Card(
                               margin: const EdgeInsets.symmetric(
@@ -119,11 +117,17 @@ class _AppsScreenState extends State<AppsScreen> {
                                 vertical: 4,
                               ),
                               child: ListTile(
-                                leading:
-                                    _buildAppIcon(app.icon),
-                                title: Text(app.name ?? ''),
+                                leading: icon != null
+                                    ? Image.memory(
+                                        icon,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : const Icon(Icons.android),
+                                title: Text(name),
                                 subtitle: Text(
-                                  app.packageName ?? '',
+                                  package,
                                   maxLines: 1,
                                   overflow:
                                       TextOverflow.ellipsis,
@@ -133,12 +137,12 @@ class _AppsScreenState extends State<AppsScreen> {
                                   onChanged: (value) {
                                     if (value) {
                                       service.enableApp(
-                                        app.packageName ?? '',
-                                        app.name ?? '',
+                                        package,
+                                        name,
                                       );
                                     } else {
                                       service.disableApp(
-                                        app.packageName ?? '',
+                                        package,
                                       );
                                     }
                                   },
@@ -154,21 +158,6 @@ class _AppsScreenState extends State<AppsScreen> {
     );
   }
 
-  /// 🔹 Ícone seguro
-  Widget _buildAppIcon(Uint8List? iconBytes) {
-    if (iconBytes == null) {
-      return const Icon(Icons.android, size: 40);
-    }
-
-    return Image.memory(
-      iconBytes,
-      width: 40,
-      height: 40,
-      fit: BoxFit.cover,
-    );
-  }
-
-  /// 🔹 Estado vazio
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
