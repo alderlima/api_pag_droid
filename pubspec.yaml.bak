@@ -18,8 +18,12 @@ dependencies:
   workmanager: ^0.5.2 # Atualizado
   permission_handler: ^11.3.1 # Versão estável recomendada
   
+  # SUBSTITUIÇÃO CRÍTICA:
+  # O device_apps original (2.2.0) quebra o build no Android moderno.
+  # Use esta versão mantida pela comunidade que resolve o erro de 'namespace'.
   device_apps:
-    installed_apps: ^1.0.2
+    git:
+      url: https://github.com
   
   shared_preferences: ^2.2.3 # Atualizado
   provider: ^6.1.2 # Atualizado
