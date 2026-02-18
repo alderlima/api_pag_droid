@@ -1,12 +1,15 @@
+// O bloco 'plugins' agora é gerenciado preferencialmente no settings.gradle.
+// Se o seu projeto ainda não migrou totalmente, as versões aqui devem bater:
 buildscript {
-    ext.kotlin_version = '1.9.24'
+    ext.kotlin_version = '2.1.0' // Atualizado para acompanhar o K2 Compiler
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.0'
+        // AGP 9.0.1 e Kotlin 2.1.0
+        classpath 'com.android.tools.build:gradle:9.0.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -18,14 +21,17 @@ allprojects {
     }
 }
 
-rootProject.buildDir = '../build'
+// Configuração de diretórios de build atualizada para evitar avisos de depreciação
+rootProject.layout.buildDirectory.set(file("../build"))
+
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.layout.buildDirectory.set(file("${rootProject.layout.buildDirectory.get()}/${project.name}"))
 }
+
 subprojects {
     project.evaluationDependsOn(':app')
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }
