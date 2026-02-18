@@ -5,36 +5,34 @@ plugins {
 
 android {
     namespace = "com.macronotify.macro_notify"
-    compileSdkVersion 35 
-    ndkVersion "27.0.12077973"
+    
+    compileSdk = 35 
+    ndkVersion = "27.0.12077973"
 
+    // ESSENCIAL: Adicione estes dois blocos abaixo
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = '17'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
+        jvmTarget = '21'
     }
 
     defaultConfig {
-        applicationId "com.macronotify.macro_notify"
-        minSdkVersion 24 
-        targetSdkVersion 35
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
-        multiDexEnabled true
+        applicationId = "com.macronotify.macro_notify"
+        minSdk = 24
+        targetSdk = 35
+        // Certifique-se que estas variáveis existem ou use flutter.versionCode
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
+            signingConfig = signingConfigs.debug
+            minifyEnabled = false
+            shrinkResources = false
         }
     }
 }
