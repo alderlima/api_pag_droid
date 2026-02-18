@@ -24,6 +24,7 @@ if (flutterVersionName == null) {
 android {
     namespace "com.macronotify.macro_notify"
     compileSdk 36 // Sintaxe atualizada de compileSdkVersion para compileSdk
+    ndkVersion "25.1.8937393"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
