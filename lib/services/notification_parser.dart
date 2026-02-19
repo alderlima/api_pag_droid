@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
@@ -28,7 +27,7 @@ class ExtractedPayment {
 
 /// Serviço responsável por fazer parsing de notificações
 class NotificationParser {
-  /// Lista de pacotes permitidos para processar (usar igualdade exata)
+  /// Lista de pacotes permitidos para processar
   static const List<String> WHITELIST_PACKAGES = [
     'com.nu.production', // Nu Pagbank
     'com.itau.mobile', // Itaú
@@ -57,9 +56,11 @@ class NotificationParser {
     multiLine: true,
   );
 
-  /// Verifica se o pacote está na whitelist (igualdade exata)
+  /// Verifica se o pacote está na whitelist
   static bool isPackageWhitelisted(String packageName) {
-    return WHITELIST_PACKAGES.contains(packageName);
+    return WHITELIST_PACKAGES.any((pkg) => 
+      packageName.toLowerCase().contains(pkg.toLowerCase())
+    );
   }
 
   /// Verifica se a notificação contém palavras-chave de pagamento
@@ -86,7 +87,7 @@ class NotificationParser {
       final amount = double.tryParse(amountStr);
       return amount;
     } catch (e) {
-      debugPrint('Erro ao extrair valor: $e');
+      print('Erro ao extrair valor: $e');
       return null;
     }
   }
@@ -113,30 +114,30 @@ class NotificationParser {
   }) {
     // Validar pacote
     if (!isPackageWhitelisted(packageName)) {
-      debugPrint('❌ Pacote não permitido: $packageName');
+      print('❌ Pacote não permitido: $packageName');
       return null;
     }
 
     // Validar palavras-chave
     if (!containsPaymentKeywords(title, text)) {
-      debugPrint('❌ Notificação não contém palavras-chave de pagamento');
+      print('❌ Notificação não contém palavras-chave de pagamento');
       return null;
     }
 
     // Extrair valor
     final amount = extractAmount(text);
     if (amount == null || amount <= 0) {
-      debugPrint('❌ Não foi possível extrair valor válido');
+      print('❌ Não foi possível extrair valor válido');
       return null;
     }
 
     // Gerar hash
     final hash = generateNotificationHash(packageName, title, text, timestamp);
 
-    debugPrint('✅ Notificação válida:');
-    debugPrint('   - Pacote: $packageName');
-    debugPrint('   - Valor: R\$ $amount');
-    debugPrint('   - Hash: $hash');
+    print('✅ Notificação válida:');
+    print('   - Pacote: $packageName');
+    print('   - Valor: R\$ $amount');
+    print('   - Hash: $hash');
 
     return ExtractedPayment(
       amount: amount,

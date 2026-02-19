@@ -1,17 +1,11 @@
-import 'dart:async'; // necessário para StreamController
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
-import 'package:flutter/foundation.dart';
 
 class NotificationService extends ChangeNotifier {
   static const platform = MethodChannel('com.macronotify.macro_notify/notifications');
-  static const eventChannel = EventChannel('com.macronotify.macro_notify/notifications_stream');
-
-  final _notificationStreamController = StreamController<Map<String, dynamic>>.broadcast();
-  Stream<Map<String, dynamic>> get notificationStream => _notificationStreamController.stream;
 
   List<NotificationModel> _notifications = [];
   List<AppModel> _enabledApps = [];
@@ -25,19 +19,6 @@ class NotificationService extends ChangeNotifier {
 
   NotificationService() {
     _initializeService();
-    _listenToNotificationStream();
-  }
-
-  void _listenToNotificationStream() {
-    eventChannel.receiveBroadcastStream().listen((dynamic event) {
-      if (event is Map) {
-        final data = Map<String, dynamic>.from(event);
-        debugPrint('📩 Notificação recebida via EventChannel: $data');
-        _notificationStreamController.add(data);
-      }
-    }, onError: (error) {
-      debugPrint('❌ Erro no EventChannel: $error');
-    });
   }
 
   Future<void> _initializeService() async {
@@ -157,11 +138,5 @@ class NotificationService extends ChangeNotifier {
 
   void refreshNotifications() {
     loadNotifications();
-  }
-
-  @override
-  void dispose() {
-    _notificationStreamController.close();
-    super.dispose();
   }
 }

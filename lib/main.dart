@@ -20,16 +20,12 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationService()),
         ChangeNotifierProvider(create: (_) => PaymentService()),
-        ChangeNotifierProxyProvider2<NotificationService, PaymentService, NotificationProcessor>(
+        ChangeNotifierProxyProvider<PaymentService, NotificationProcessor>(
           create: (context) => NotificationProcessor(
-            notificationService: context.read<NotificationService>(),
             paymentService: context.read<PaymentService>(),
           ),
-          update: (context, notificationService, paymentService, previous) =>
-              previous ?? NotificationProcessor(
-                notificationService: notificationService,
-                paymentService: paymentService,
-              ),
+          update: (context, paymentService, previous) =>
+              previous ?? NotificationProcessor(paymentService: paymentService),
         ),
       ],
       child: MaterialApp(

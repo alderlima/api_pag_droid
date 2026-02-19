@@ -53,28 +53,27 @@ class NotificationListener : NotificationListenerService() {
             val subText = extractSubText(notification)
             val bigText = extractBigText(notification)
 
-            // Criar mapa com os dados (para enviar via EventChannel)
-            val notificationData = mapOf(
-                "packageName" to packageName,
-                "title" to title,
-                "text" to text,
-                "subText" to subText,
-                "bigText" to bigText,
-                "key" to key,
-                "postTime" to postTime,
-                "timestamp" to System.currentTimeMillis(),
-                "action" to action,
-                "id" to sbn.id
-            )
+            // Criar objeto JSON com os dados
+            val notificationData = JSONObject().apply {
+                put("packageName", packageName)
+                put("title", title)
+                put("text", text)
+                put("subText", subText)
+                put("bigText", bigText)
+                put("key", key)
+                put("postTime", postTime)
+                put("timestamp", System.currentTimeMillis())
+                put("action", action)
+                put("id", sbn.id)
+            }
 
             Log.d(TAG, "Notificação capturada: $notificationData")
 
             // Salvar no banco de dados
-            saveNotificationToDatabase(notificationData)
+            saveNotificationToDatabase(notificationData.toString())
 
-            // Enviar para Flutter via EventChannel (se houver sink)
-            MainActivity.eventSink?.success(notificationData)
-                ?: Log.w(TAG, "EventSink não disponível, notificação não enviada ao Flutter")
+            // Enviar para Flutter via método channel
+            sendToFlutter(notificationData)
 
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao processar notificação: ${e.message}", e)
@@ -123,12 +122,22 @@ class NotificationListener : NotificationListenerService() {
         return enabledApps.contains(packageName)
     }
 
-    private fun saveNotificationToDatabase(data: Map<String, Any>) {
+    private fun saveNotificationToDatabase(data: String) {
         try {
             val dbHelper = NotificationDatabaseHelper(this)
             dbHelper.insertNotification(data)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao salvar notificação no banco: ${e.message}", e)
+        }
+    }
+
+    private fun sendToFlutter(data: JSONObject) {
+        try {
+            val intent = Intent("com.macronotify.NOTIFICATION_RECEIVED")
+            intent.putExtra("notification_data", data.toString())
+            sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao enviar para Flutter: ${e.message}", e)
         }
     }
 

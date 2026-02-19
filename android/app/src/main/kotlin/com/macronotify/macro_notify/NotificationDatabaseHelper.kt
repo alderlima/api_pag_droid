@@ -1,6 +1,5 @@
 package com.macronotify.macro_notify
 
-import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
@@ -85,20 +84,22 @@ class NotificationDatabaseHelper(context: Context) :
         }
     }
 
-    fun insertNotification(data: Map<String, Any>) {
+    fun insertNotification(rawData: String) {
         try {
             val db = writableDatabase
-            val values = ContentValues().apply {
-                put(COLUMN_PACKAGE_NAME, data["packageName"] as? String ?: "")
-                put(COLUMN_TITLE, data["title"] as? String ?: "")
-                put(COLUMN_TEXT, data["text"] as? String ?: "")
-                put(COLUMN_SUB_TEXT, data["subText"] as? String ?: "")
-                put(COLUMN_BIG_TEXT, data["bigText"] as? String ?: "")
-                put(COLUMN_KEY, data["key"] as? String ?: "")
-                put(COLUMN_TIMESTAMP, data["timestamp"] as? Long ?: System.currentTimeMillis())
-                put(COLUMN_ACTION, data["action"] as? String ?: "posted")
-                put(COLUMN_NOTIFICATION_ID, data["id"] as? Int ?: 0)
-                put(COLUMN_RAW_DATA, JSONObject(data).toString())
+            val data = JSONObject(rawData)
+
+            val values = android.content.ContentValues().apply {
+                put(COLUMN_PACKAGE_NAME, data.optString("packageName", ""))
+                put(COLUMN_TITLE, data.optString("title", ""))
+                put(COLUMN_TEXT, data.optString("text", ""))
+                put(COLUMN_SUB_TEXT, data.optString("subText", ""))
+                put(COLUMN_BIG_TEXT, data.optString("bigText", ""))
+                put(COLUMN_KEY, data.optString("key", ""))
+                put(COLUMN_TIMESTAMP, data.optLong("timestamp", System.currentTimeMillis()))
+                put(COLUMN_ACTION, data.optString("action", "posted"))
+                put(COLUMN_NOTIFICATION_ID, data.optInt("id", 0))
+                put(COLUMN_RAW_DATA, rawData)
                 put(COLUMN_IS_ACTIVE, 1)
             }
 
@@ -169,7 +170,7 @@ class NotificationDatabaseHelper(context: Context) :
     fun addEnabledApp(packageName: String, appName: String) {
         try {
             val db = writableDatabase
-            val values = ContentValues().apply {
+            val values = android.content.ContentValues().apply {
                 put(COLUMN_APP_PACKAGE, packageName)
                 put(COLUMN_APP_NAME, appName)
                 put(COLUMN_APP_ENABLED, 1)

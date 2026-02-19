@@ -13,9 +13,6 @@ import android.util.Base64
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.EventChannel.EventSink
-import io.flutter.plugin.common.EventChannel.StreamHandler
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
 import org.json.JSONObject
@@ -25,13 +22,9 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "com.macronotify.macro_notify/notifications"
-        private const val EVENT_CHANNEL = "com.macronotify.macro_notify/notifications_stream"
         private const val TAG = "MainActivity"
         private const val PREFS_NAME = "macro_notify_prefs"
         private const val ENABLED_APPS_KEY = "enabled_apps"
-
-        // EventSink para enviar notificações para o Flutter em tempo real
-        var eventSink: EventSink? = null
     }
 
     private lateinit var channel: MethodChannel
@@ -44,8 +37,8 @@ class MainActivity : FlutterActivity() {
         dbHelper = NotificationDatabaseHelper(this)
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        // Configurar MethodChannel para comandos
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getNotifications" -> {
@@ -121,21 +114,7 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // Configurar EventChannel para streaming de notificações
-        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL)
-            .setStreamHandler(object : StreamHandler {
-                override fun onListen(arguments: Any?, sink: EventSink) {
-                    eventSink = sink
-                    Log.d(TAG, "EventChannel: onListen chamado, sink configurado")
-                }
-
-                override fun onCancel(arguments: Any?) {
-                    eventSink = null
-                    Log.d(TAG, "EventChannel: onCancel chamado, sink removido")
-                }
-            })
-
-        Log.d(TAG, "MethodChannel e EventChannel configurados com sucesso")
+        Log.d(TAG, "MethodChannel configurado com sucesso")
     }
 
     private fun getInstalledApps(): JSONArray {
