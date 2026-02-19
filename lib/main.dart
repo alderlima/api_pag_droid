@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
+import 'services/payment_service.dart';
+import 'services/notification_processor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,14 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationService()),
+        ChangeNotifierProvider(create: (_) => PaymentService()),
+        ChangeNotifierProxyProvider<PaymentService, NotificationProcessor>(
+          create: (context) => NotificationProcessor(
+            paymentService: context.read<PaymentService>(),
+          ),
+          update: (context, paymentService, previous) =>
+              previous ?? NotificationProcessor(paymentService: paymentService),
+        ),
       ],
       child: MaterialApp(
         title: 'MacroNotify',

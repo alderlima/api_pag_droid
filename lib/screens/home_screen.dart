@@ -4,6 +4,7 @@ import '../services/notification_service.dart';
 import 'logs_screen.dart';
 import 'apps_screen.dart';
 import 'settings_screen.dart';
+import 'payments_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -17,11 +18,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = const [
     LogsScreen(),
+    PaymentsScreen(),
     AppsScreen(),
     SettingsScreen(),
   ];
 
-  final List<String> _titles = ['Logs', 'Aplicativos', 'Configurações'];
+  final List<String> _titles = [
+    'Logs',
+    'Pagamentos',
+    'Aplicativos',
+    'Configurações'
+  ];
 
   @override
   void initState() {
@@ -53,6 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.notifications),
             label: 'Logs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.payment),
+            label: 'Pagamentos',
           ),
           NavigationDestination(
             icon: Icon(Icons.apps),
