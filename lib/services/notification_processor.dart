@@ -105,12 +105,13 @@ class NotificationProcessor extends ChangeNotifier {
       );
 
       if (payment == null) {
-        // Não adiciona ao histórico, apenas retorna
-        return ProcessingResult(
+        final result = ProcessingResult(
           success: false,
           message: 'Notificação não atende aos critérios de processamento',
           timestamp: DateTime.now(),
         );
+        _addToHistory(result);
+        return result;
       }
 
       debugPrint('✅ Parsing concluído');
