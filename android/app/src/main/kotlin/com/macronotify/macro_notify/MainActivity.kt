@@ -4,13 +4,19 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.provider.Settings
+import android.util.Base64
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 
 class MainActivity : FlutterActivity() {
 
@@ -94,11 +100,59 @@ class MainActivity : FlutterActivity() {
                     requestPermissions()
                     result.success(true)
                 }
+                "getInstalledApps" -> {
+                    try {
+                        val apps = getInstalledApps()
+                        Log.d(TAG, "Retornando ${apps.length()} apps instalados")
+                        result.success(apps.toString())
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Erro ao listar apps: ${e.message}", e)
+                        result.error("ERROR", "Erro ao listar aplicativos: ${e.message}", null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
 
         Log.d(TAG, "MethodChannel configurado com sucesso")
+    }
+
+    private fun getInstalledApps(): JSONArray {
+        val apps = JSONArray()
+        val pm = packageManager
+        
+        try {
+            val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            
+            for (appInfo in packages) {
+                try {
+                    // Pular apps de sistema (opcional)
+                    if ((appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0) {
+                        continue
+                    }
+                    
+                    val appName = pm.getApplicationLabel(appInfo).toString()
+                    val packageName = appInfo.packageName
+                    
+                    val appObject = JSONObject().apply {
+                        put("name", appName)
+                        put("packageName", packageName)
+                    }
+                    
+                    apps.put(appObject)
+                    
+                } catch (e: Exception) {
+                    Log.w(TAG, "Erro ao processar app ${appInfo.packageName}: ${e.message}")
+                }
+            }
+            
+            Log.d(TAG, "Total de apps encontrados: ${apps.length()}")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao obter lista de apps: ${e.message}", e)
+        }
+        
+        return apps
     }
 
     private fun isNotificationListenerEnabled(): Boolean {

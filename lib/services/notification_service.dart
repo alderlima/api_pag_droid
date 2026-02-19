@@ -33,7 +33,7 @@ class NotificationService extends ChangeNotifier {
       _isNotificationListenerEnabled = isEnabled;
       notifyListeners();
     } catch (e) {
-      print('Erro ao verificar status do listener: $e');
+      debugPrint('Erro ao verificar status do listener: $e');
     }
   }
 
@@ -41,7 +41,7 @@ class NotificationService extends ChangeNotifier {
     try {
       await platform.invokeMethod('openNotificationListenerSettings');
     } catch (e) {
-      print('Erro ao abrir configurações: $e');
+      debugPrint('Erro ao abrir configurações: $e');
     }
   }
 
@@ -55,7 +55,7 @@ class NotificationService extends ChangeNotifier {
       }).toList();
       notifyListeners();
     } catch (e) {
-      print('Erro ao carregar notificações: $e');
+      debugPrint('Erro ao carregar notificações: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -68,7 +68,7 @@ class NotificationService extends ChangeNotifier {
       _notifications.removeWhere((n) => n.id == id);
       notifyListeners();
     } catch (e) {
-      print('Erro ao deletar notificação: $e');
+      debugPrint('Erro ao deletar notificação: $e');
     }
   }
 
@@ -78,7 +78,7 @@ class NotificationService extends ChangeNotifier {
       _notifications.clear();
       notifyListeners();
     } catch (e) {
-      print('Erro ao limpar notificações: $e');
+      debugPrint('Erro ao limpar notificações: $e');
     }
   }
 
@@ -90,7 +90,7 @@ class NotificationService extends ChangeNotifier {
       }).toList();
       notifyListeners();
     } catch (e) {
-      print('Erro ao carregar apps habilitados: $e');
+      debugPrint('Erro ao carregar apps habilitados: $e');
     }
   }
 
@@ -102,7 +102,7 @@ class NotificationService extends ChangeNotifier {
       });
       await loadEnabledApps();
     } catch (e) {
-      print('Erro ao habilitar app: $e');
+      debugPrint('Erro ao habilitar app: $e');
     }
   }
 
@@ -111,7 +111,7 @@ class NotificationService extends ChangeNotifier {
       await platform.invokeMethod('disableApp', {'packageName': packageName});
       await loadEnabledApps();
     } catch (e) {
-      print('Erro ao desabilitar app: $e');
+      debugPrint('Erro ao desabilitar app: $e');
     }
   }
 
@@ -123,7 +123,7 @@ class NotificationService extends ChangeNotifier {
         'postNotifications': result['postNotifications'] as bool? ?? false,
       };
     } catch (e) {
-      print('Erro ao verificar permissões: $e');
+      debugPrint('Erro ao verificar permissões: $e');
       return {'notificationListener': false, 'postNotifications': false};
     }
   }
@@ -132,7 +132,7 @@ class NotificationService extends ChangeNotifier {
     try {
       await platform.invokeMethod('requestPermissions');
     } catch (e) {
-      print('Erro ao solicitar permissões: $e');
+      debugPrint('Erro ao solicitar permissões: $e');
     }
   }
 
