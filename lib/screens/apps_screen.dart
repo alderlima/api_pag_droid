@@ -39,7 +39,7 @@ class _AppsScreenState extends State<AppsScreen> {
       
       final String result = await platform.invokeMethod('getInstalledApps');
       
-      debugPrint('Resultado recebido: ${result.substring(0, Math.min(100, result.length))}...');
+      debugPrint('Resultado recebido: ${result.substring(0, result.length > 100 ? 100 : result.length)}...');
       
       final List<dynamic> appsJson = jsonDecode(result);
       
