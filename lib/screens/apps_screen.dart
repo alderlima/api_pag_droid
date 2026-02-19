@@ -1,116 +1,177 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:provider/provider.dart';
+import 'package:installed_apps/installed_apps.dart';
+
 import '../services/notification_service.dart';
-import '../models/app_model.dart';
 
 class AppsScreen extends StatefulWidget {
-  const AppsScreen({super.key});
+  const AppsScreen({Key? key}) : super(key: key);
 
   @override
   State<AppsScreen> createState() => _AppsScreenState();
 }
 
 class _AppsScreenState extends State<AppsScreen> {
-  List<Application> _apps = [];
-  bool _loading = true;
-  String _search = '';
+  List<Map<String, dynamic>> _installedApps = [];
+  bool _isLoadingApps = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _loadApps();
+    _loadInstalledApps();
   }
 
-  Future<void> _loadApps() async {
+  Future<void> _loadInstalledApps() async {
+    setState(() => _isLoadingApps = true);
+
     try {
-      final installedApps = await DeviceApps.getInstalledApplications(
-        includeSystemApps: true,   // 🔥 importante para não vir vazio
-        includeAppIcons: true,
+      final apps = await InstalledApps.getInstalledApps(
+        true,
+        true,
       );
 
-      installedApps.sort((a, b) => a.appName.compareTo(b.appName));
-
-      debugPrint("Apps encontrados: ${installedApps.length}");
-
       setState(() {
-        _apps = installedApps;
-        _loading = false;
+        _installedApps =
+            List<Map<String, dynamic>>.from(apps);
       });
     } catch (e) {
-      debugPrint("Erro ao carregar apps: $e");
-      setState(() => _loading = false);
+      debugPrint('Erro ao carregar apps: $e');
     }
+
+    setState(() => _isLoadingApps = false);
+  }
+
+  List<Map<String, dynamic>> get _filteredApps {
+    if (_searchQuery.isEmpty) return _installedApps;
+
+    return _installedApps.where((app) {
+      final name = (app['name'] ?? '').toString();
+      final package = (app['packageName'] ?? '').toString();
+
+      return name
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          package
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final service = context.watch<NotificationService>();
-    final enabledApps = service.enabledApps;
-
-    final filtered = _apps.where((app) {
-      final name = app.appName.toLowerCase();
-      final pkg = app.packageName.toLowerCase();
-      final q = _search.toLowerCase();
-      return name.contains(q) || pkg.contains(q);
-    }).toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Aplicativos'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar app...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (v) => setState(() => _search = v),
-            ),
-          ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: _loadApps,
-                    child: ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, i) {
-                        final app = filtered[i];
-                        final isEnabled = enabledApps.any(
-                          (e) => e.packageName == app.packageName,
-                        );
-
-                        return ListTile(
-                          leading: app is ApplicationWithIcon
-                              ? Image.memory(app.icon, width: 40, height: 40)
-                              : const Icon(Icons.apps),
-                          title: Text(app.appName),
-                          subtitle: Text(app.packageName),
-                          trailing: Switch(
-                            value: isEnabled,
-                            onChanged: (v) async {
-                              if (v) {
-                                await service.enableApp(
-                                  AppModel(
-                                    packageName: app.packageName,
-                                    appName: app.appName,
-                                    isEnabled: true,
-                                  ),
-                                );
-                              } else {
-                                await service.disableApp(app.packageName);
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    ),
+    return Consumer<NotificationService>(
+      builder: (context, service, _) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
+                },
+                decoration: InputDecoration(
+                  hintText: 'Pesquisar aplicativos...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: _isLoadingApps
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredApps.isEmpty
+                      ? _buildEmptyState(context)
+                      : ListView.builder(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 8),
+                          itemCount: _filteredApps.length,
+                          itemBuilder: (context, index) {
+                            final app = _filteredApps[index];
+
+                            final name =
+                                (app['name'] ?? '').toString();
+                            final package =
+                                (app['packageName'] ?? '').toString();
+                            final icon =
+                                app['icon'] as Uint8List?;
+
+                            final isEnabled = service.enabledApps
+                                .any((a) =>
+                                    a.packageName == package);
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              child: ListTile(
+                                leading: icon != null
+                                    ? Image.memory(
+                                        icon,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : const Icon(Icons.android),
+                                title: Text(name),
+                                subtitle: Text(
+                                  package,
+                                  maxLines: 1,
+                                  overflow:
+                                      TextOverflow.ellipsis,
+                                ),
+                                trailing: Switch(
+                                  value: isEnabled,
+                                  onChanged: (value) {
+                                    if (value) {
+                                      service.enableApp(
+                                        package,
+                                        name,
+                                      );
+                                    } else {
+                                      service.disableApp(
+                                        package,
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.apps,
+            size: 64,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum aplicativo encontrado',
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
         ],
       ),
