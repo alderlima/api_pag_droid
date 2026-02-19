@@ -28,6 +28,16 @@ class ExtractedPayment {
 
 /// Serviço responsável por fazer parsing de notificações
 class NotificationParser {
+  /// Lista de pacotes permitidos para processar (usar igualdade exata)
+  static const List<String> WHITELIST_PACKAGES = [
+    'com.nu.production', // Nu Pagbank
+    'com.itau.mobile', // Itaú
+    'com.bradesco.bdrco', // Bradesco
+    'com.caixa', // Caixa
+    'com.banco.santander', // Santander
+    'com.banco.bbsa.mobile', // Banco do Brasil
+  ];
+
   /// Palavras-chave para identificar notificações de pagamento recebido
   static const List<String> PAYMENT_KEYWORDS = [
     'transferência recebida',
@@ -46,6 +56,11 @@ class NotificationParser {
     r'[Rr]\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)',
     multiLine: true,
   );
+
+  /// Verifica se o pacote está na whitelist (igualdade exata)
+  static bool isPackageWhitelisted(String packageName) {
+    return WHITELIST_PACKAGES.contains(packageName);
+  }
 
   /// Verifica se a notificação contém palavras-chave de pagamento
   static bool containsPaymentKeywords(String title, String text) {
@@ -91,14 +106,13 @@ class NotificationParser {
   /// Processa uma notificação e extrai informações de pagamento
   /// Retorna ExtractedPayment se válida, null caso contrário
   static ExtractedPayment? parseNotification({
-    required List<String> allowedPackages, // Lista dinâmica de pacotes habilitados
     required String packageName,
     required String title,
     required String text,
     required DateTime timestamp,
   }) {
-    // Validar pacote usando a lista dinâmica
-    if (!allowedPackages.contains(packageName)) {
+    // Validar pacote
+    if (!isPackageWhitelisted(packageName)) {
       debugPrint('❌ Pacote não permitido: $packageName');
       return null;
     }
