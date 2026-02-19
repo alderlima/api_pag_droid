@@ -194,7 +194,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
         leading: Icon(
-          isSuccess ? Icons.check_circle : Icons.error,
+          isSuccess ? Icons.check_circle : Icons.error_circle,
           color: statusColor,
         ),
         title: Text(
