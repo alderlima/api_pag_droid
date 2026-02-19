@@ -1,174 +1,146 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
-import '../services/notification_parser.dart'; // para usar containsPaymentKeywords
-import '../models/notification_model.dart';
+import '../widgets/notification_card.dart';
 
-class LogsScreen extends StatelessWidget {
+class LogsScreen extends StatefulWidget {
   const LogsScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LogsScreen> createState() => _LogsScreenState();
+}
+
+class _LogsScreenState extends State<LogsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationService>().loadNotifications();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationService>(
       builder: (context, service, _) {
-        // Conjunto de pacotes habilitados atualmente
-        final enabledPackages = service.enabledApps
-            .map((app) => app.packageName)
-            .toSet();
-
-        // Filtra notificações: apenas de apps habilitados E com palavras‑chave de pagamento
-        final filteredNotifications = service.notifications.where((n) {
-          return enabledPackages.contains(n.packageName) &&
-              NotificationParser.containsPaymentKeywords(n.title, n.text);
-        }).toList();
-
-        return Scaffold(
-          body: Column(
+        return RefreshIndicator(
+          onRefresh: () => service.loadNotifications(),
+          child: Column(
             children: [
-              _buildHeader(context, service, filteredNotifications.length),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredNotifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = filteredNotifications[index];
-                    return _buildNotificationCard(context, notification, service);
-                  },
+              // Header com informações
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total de Notificações',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            Text(
+                              '${service.notifications.length}',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ],
+                        ),
+                        if (service.notifications.isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Limpar Logs'),
+                                    content: const Text(
+                                      'Tem certeza que deseja limpar todos os logs de notificações?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          service.clearAllNotifications();
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text('Limpar'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Limpar'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Lista de notificações
+              Expanded(
+                child: service.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : service.notifications.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_none,
+                                  size: 64,
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Nenhuma notificação capturada',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Selecione aplicativos para monitorar',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(8),
+                            itemCount: service.notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = service.notifications[index];
+                              return NotificationCard(
+                                notification: notification,
+                                onDelete: () {
+                                  service.deleteNotification(notification.id);
+                                },
+                              );
+                            },
+                          ),
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, NotificationService service, int total) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Total de Notificações',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$total',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _showClearDialog(context, service),
-            tooltip: 'Limpar todas',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationCard(BuildContext context, NotificationModel notification, NotificationService service) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    notification.title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                PopupMenuButton(
-                  icon: const Icon(Icons.more_vert),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      child: const Text('Deletar'),
-                      onTap: () => service.deleteNotification(notification.id),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              notification.packageName,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              notification.text,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _formatDate(notification.timestamp),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                TextButton(
-                  onPressed: () => service.deleteNotification(notification.id),
-                  child: const Text('Deletar'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inSeconds < 60) return 'agora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m atrás';
-    if (diff.inHours < 24) return '${diff.inHours}h atrás';
-    return '${date.day}/${date.month} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _showClearDialog(BuildContext context, NotificationService service) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Limpar todas'),
-        content: const Text('Tem certeza que deseja limpar todas as notificações?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              service.clearAllNotifications();
-              Navigator.pop(context);
-            },
-            child: const Text('Limpar'),
-          ),
-        ],
-      ),
     );
   }
 }

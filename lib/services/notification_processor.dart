@@ -5,6 +5,7 @@ import 'payment_service.dart';
 import 'notification_service.dart';
 import 'package:flutter/foundation.dart';
 
+/// Modelo para rastrear o status de processamento
 class ProcessingResult {
   final bool success;
   final String message;
@@ -26,11 +27,13 @@ class ProcessingResult {
   }
 }
 
+/// Processador de notificações responsável por orquestrar o fluxo
 class NotificationProcessor extends ChangeNotifier {
   final NotificationService notificationService;
   final PaymentService paymentService;
   
   StreamSubscription? _notificationSubscription;
+
   final List<ProcessingResult> _processingHistory = [];
   bool _isProcessing = false;
 
@@ -67,7 +70,7 @@ class NotificationProcessor extends ChangeNotifier {
     );
   }
 
-  Future<ProcessingResult?> processNotification({
+  Future<ProcessingResult> processNotification({
     required String packageName,
     required String title,
     required String text,
@@ -84,13 +87,14 @@ class NotificationProcessor extends ChangeNotifier {
       debugPrint('📄 Texto: $text');
       debugPrint('⏰ Timestamp: $timestamp');
 
+      // Obter lista de pacotes habilitados do NotificationService
       final allowedPackages = notificationService.enabledApps
           .map((app) => app.packageName)
           .toList();
 
       debugPrint('📋 Pacotes permitidos: $allowedPackages');
 
-      // Etapa 1: Parsing
+      // Etapa 1: Parsing da notificação com a lista dinâmica
       debugPrint('\n[1/3] Fazendo parsing da notificação...');
       final payment = NotificationParser.parseNotification(
         allowedPackages: allowedPackages,
@@ -101,9 +105,12 @@ class NotificationProcessor extends ChangeNotifier {
       );
 
       if (payment == null) {
-        debugPrint('❌ Notificação não é um pagamento válido. Ignorando.');
-        // Não adiciona ao histórico
-        return null;
+        // Não adiciona ao histórico, apenas retorna
+        return ProcessingResult(
+          success: false,
+          message: 'Notificação não atende aos critérios de processamento',
+          timestamp: DateTime.now(),
+        );
       }
 
       debugPrint('✅ Parsing concluído');

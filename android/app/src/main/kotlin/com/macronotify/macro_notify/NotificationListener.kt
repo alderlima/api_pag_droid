@@ -1,5 +1,6 @@
 package com.macronotify.macro_notify
 
+import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -18,6 +19,13 @@ class NotificationListener : NotificationListenerService() {
     private fun processNotification(sbn: StatusBarNotification, action: String) {
         try {
             val packageName = sbn.packageName
+
+            // Verificar se o app está habilitado
+            if (!isAppEnabled(packageName)) {
+                Log.d(TAG, "App não habilitado: $packageName")
+                return
+            }
+
             val notification = sbn.notification
             val extras = notification.extras ?: return
 
@@ -43,6 +51,12 @@ class NotificationListener : NotificationListenerService() {
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao processar notificação", e)
         }
+    }
+
+    private fun isAppEnabled(packageName: String): Boolean {
+        val prefs = getSharedPreferences("macro_notify_prefs", Context.MODE_PRIVATE)
+        val enabledApps = prefs.getStringSet("enabled_apps", setOf()) ?: setOf()
+        return enabledApps.contains(packageName)
     }
 
     override fun onListenerConnected() {
