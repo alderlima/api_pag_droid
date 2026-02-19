@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // <-- necessário para debugPrint
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
