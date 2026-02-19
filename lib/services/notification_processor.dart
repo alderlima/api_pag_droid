@@ -1,4 +1,4 @@
-import 'dart:async'; // necessário para StreamSubscription
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'notification_parser.dart';
 import 'payment_service.dart';
@@ -34,10 +34,7 @@ class NotificationProcessor extends ChangeNotifier {
   
   StreamSubscription? _notificationSubscription;
 
-  /// Histórico de processamento
   final List<ProcessingResult> _processingHistory = [];
-  
-  /// Status atual
   bool _isProcessing = false;
 
   List<ProcessingResult> get processingHistory => _processingHistory;
@@ -73,8 +70,6 @@ class NotificationProcessor extends ChangeNotifier {
     );
   }
 
-  /// Processa uma notificação completa
-  /// Retorna ProcessingResult com o resultado
   Future<ProcessingResult> processNotification({
     required String packageName,
     required String title,
@@ -92,9 +87,17 @@ class NotificationProcessor extends ChangeNotifier {
       debugPrint('📄 Texto: $text');
       debugPrint('⏰ Timestamp: $timestamp');
 
-      // Etapa 1: Parsing da notificação
+      // Obter lista de pacotes habilitados do NotificationService
+      final allowedPackages = notificationService.enabledApps
+          .map((app) => app.packageName)
+          .toList();
+
+      debugPrint('📋 Pacotes permitidos: $allowedPackages');
+
+      // Etapa 1: Parsing da notificação com a lista dinâmica
       debugPrint('\n[1/3] Fazendo parsing da notificação...');
       final payment = NotificationParser.parseNotification(
+        allowedPackages: allowedPackages,
         packageName: packageName,
         title: title,
         text: text,
@@ -183,18 +186,15 @@ class NotificationProcessor extends ChangeNotifier {
     }
   }
 
-  /// Adiciona resultado ao histórico
   void _addToHistory(ProcessingResult result) {
     _processingHistory.add(result);
     notifyListeners();
   }
 
-  /// Retorna histórico de processamento
   List<ProcessingResult> getProcessingHistory() {
     return List.unmodifiable(_processingHistory);
   }
 
-  /// Retorna estatísticas
   Map<String, dynamic> getStatistics() {
     final total = _processingHistory.length;
     final successful = _processingHistory.where((r) => r.success).length;
@@ -213,13 +213,11 @@ class NotificationProcessor extends ChangeNotifier {
     };
   }
 
-  /// Limpa histórico
   void clearHistory() {
     _processingHistory.clear();
     notifyListeners();
   }
 
-  /// Retorna últimos N processamentos
   List<ProcessingResult> getRecentProcessing({int limit = 10}) {
     return _processingHistory.reversed.take(limit).toList();
   }
