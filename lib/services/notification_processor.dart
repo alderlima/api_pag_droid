@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async'; // necessário para StreamSubscription
 import 'package:flutter/material.dart';
 import 'notification_parser.dart';
 import 'payment_service.dart';
 import 'notification_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Modelo para rastrear o status de processamento
 class ProcessingResult {
