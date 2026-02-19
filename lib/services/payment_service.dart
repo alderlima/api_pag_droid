@@ -23,7 +23,7 @@ class PaymentResponse {
 
 /// Serviço responsável por comunicação HTTP com o backend
 class PaymentService extends ChangeNotifier {
-  /// URL base do backend
+  /// URL base do backend (para emulador usar 10.0.2.2, para dispositivo físico use IP da máquina)
   static const String BACKEND_URL = 'http://127.0.0.1:3000';
   
   /// Endpoint para confirmar pagamento

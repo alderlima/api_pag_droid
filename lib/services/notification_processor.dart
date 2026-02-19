@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'notification_parser.dart';
 import 'payment_service.dart';
+import 'notification_service.dart';
 
 /// Modelo para rastrear o status de processamento
 class ProcessingResult {
@@ -26,8 +27,11 @@ class ProcessingResult {
 
 /// Processador de notificações responsável por orquestrar o fluxo
 class NotificationProcessor extends ChangeNotifier {
+  final NotificationService notificationService;
   final PaymentService paymentService;
   
+  StreamSubscription? _notificationSubscription;
+
   /// Histórico de processamento
   final List<ProcessingResult> _processingHistory = [];
   
@@ -37,7 +41,35 @@ class NotificationProcessor extends ChangeNotifier {
   List<ProcessingResult> get processingHistory => _processingHistory;
   bool get isProcessing => _isProcessing;
 
-  NotificationProcessor({required this.paymentService});
+  NotificationProcessor({
+    required this.notificationService,
+    required this.paymentService,
+  }) {
+    _listenToNotifications();
+  }
+
+  void _listenToNotifications() {
+    _notificationSubscription = notificationService.notificationStream.listen(
+      (data) async {
+        final packageName = data['packageName'] as String? ?? '';
+        final title = data['title'] as String? ?? '';
+        final text = data['text'] as String? ?? '';
+        final timestamp = data['timestamp'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int)
+            : DateTime.now();
+
+        await processNotification(
+          packageName: packageName,
+          title: title,
+          text: text,
+          timestamp: timestamp,
+        );
+      },
+      onError: (error) {
+        debugPrint('❌ Erro no stream de notificações: $error');
+      },
+    );
+  }
 
   /// Processa uma notificação completa
   /// Retorna ProcessingResult com o resultado
@@ -188,5 +220,11 @@ class NotificationProcessor extends ChangeNotifier {
   /// Retorna últimos N processamentos
   List<ProcessingResult> getRecentProcessing({int limit = 10}) {
     return _processingHistory.reversed.take(limit).toList();
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    super.dispose();
   }
 }
