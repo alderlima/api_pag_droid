@@ -34,55 +34,45 @@ class HomeScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Filtra apenas notificações de apps habilitados
           final enabledPackages = service.enabledApps.map((app) => app.packageName).toSet();
           final filteredNotifications = service.notifications
               .where((n) => enabledPackages.contains(n.packageName))
               .toList();
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              await service.loadEnabledApps();
-              await service.loadNotifications();
-            },
-            child: filteredNotifications.isEmpty
-                ? ListView(
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.3,
-                      ),
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.notifications_none,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Nenhuma notificação',
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'As notificações dos apps habilitados aparecerão aqui',
-                              style: Theme.of(context).textTheme.bodySmall,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredNotifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = filteredNotifications[index];
-                      return _buildNotificationCard(context, notification, service);
-                    },
+          if (filteredNotifications.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_none,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nenhuma notificação',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'As notificações dos apps habilitados aparecerão aqui',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredNotifications.length,
+            itemBuilder: (context, index) {
+              final notification = filteredNotifications[index];
+              return _buildNotificationCard(context, notification, service);
+            },
           );
         },
       ),
