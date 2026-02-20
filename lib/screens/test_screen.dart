@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
 import '../services/payment_service.dart';
 import '../services/notification_processor.dart';
+import '../models/notification_model.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({Key? key}) : super(key: key);
@@ -13,144 +14,216 @@ class TestScreen extends StatefulWidget {
 
 class _TestScreenState extends State<TestScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _selectedPackage = '';
-  String _title = '';
-  String _text = '';
-  String _action = 'posted';
-  bool _isSimulating = false;
+  final _packageController = TextEditingController(text: 'com.nu.production');
+  final _titleController = TextEditingController(text: 'Transferência recebida');
+  final _textController = TextEditingController(text: 'Recebemos sua transferência de R\$ 0,01.');
+  final _amountController = TextEditingController(text: '0.01');
+  bool _simulateWithAmount = true;
+  String _lastResult = '';
 
-  final List<String> _actionOptions = ['posted', 'removed'];
+  @override
+  void dispose() {
+    _packageController.dispose();
+    _titleController.dispose();
+    _textController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _simulateNotification() async {
+    final packageName = _packageController.text.trim();
+    final title = _titleController.text.trim();
+    String text = _textController.text.trim();
+
+    if (_simulateWithAmount) {
+      final amount = _amountController.text.trim().replaceAll(',', '.');
+      if (double.tryParse(amount) == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Valor inválido'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+      // Se o usuário preencheu o valor separadamente, substitui ou insere no texto
+      if (!text.contains('R\$')) {
+        text = 'Recebemos sua transferência de R\$ $amount.';
+      }
+    }
+
+    if (packageName.isEmpty || title.isEmpty || text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final notificationService = context.read<NotificationService>();
+    final processor = context.read<NotificationProcessor>();
+
+    // Cria um mapa simulando o evento que viria do EventChannel
+    final fakeData = {
+      'packageName': packageName,
+      'title': title,
+      'text': text,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+
+    // Injeta diretamente no stream do NotificationService
+    // Nota: Isso requer que o stream seja público ou um método para teste.
+    // Vamos usar o método privado? Melhor criar um método público no NotificationService para testes.
+    // Mas como não podemos modificar o NotificationService agora, vamos simular chamando o processor diretamente,
+    // pulando a verificação de app habilitado? O processor já verifica enabledApps, então precisamos garantir
+    // que o app esteja habilitado na lista.
+    // Vamos adicionar temporariamente à lista de enabledApps se necessário.
+    // Para simplificar, vamos verificar se o package está habilitado e, se não estiver, habilitá-lo automaticamente para o teste.
+    final isEnabled = notificationService.enabledApps.any((a) => a.packageName == packageName);
+    if (!isEnabled) {
+      await notificationService.enableApp(packageName, 'App de Teste');
+    }
+
+    // Processa diretamente a notificação
+    final result = await processor.processNotification(
+      packageName: packageName,
+      title: title,
+      text: text,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      _lastResult = '''
+✅ Notificação simulada processada.
+Status: ${result.success ? 'Sucesso' : 'Falha'}
+Mensagem: ${result.message}
+Valor extraído: ${result.payment?.amount?.toStringAsFixed(2) ?? 'N/A'}
+Hash: ${result.payment?.notificationHash ?? 'N/A'}
+''';
+    });
+
+    // Recarrega as notificações para aparecer na tela de logs
+    notificationService.loadNotifications();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final notificationService = context.watch<NotificationService>();
-    final enabledPackages = notificationService.enabledApps.map((e) => e.packageName).toList();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Simular Notificação'),
+        title: const Text('Simulador de Notificações'),
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              // Pacote
-              DropdownButtonFormField<String>(
-                value: _selectedPackage.isEmpty ? null : _selectedPackage,
-                hint: const Text('Selecione o pacote do app'),
-                items: [
-                  ...enabledPackages.map((pkg) => DropdownMenuItem(
-                        value: pkg,
-                        child: Text(pkg),
-                      )),
-                  if (enabledPackages.isEmpty)
-                    const DropdownMenuItem(
-                      value: '',
-                      child: Text('Nenhum app habilitado'),
-                    ),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedPackage = value ?? '';
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Selecione um pacote';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Pacote do App',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Ação
-              DropdownButtonFormField<String>(
-                value: _action,
-                items: _actionOptions.map((a) => DropdownMenuItem(
-                      value: a,
-                      child: Text(a),
-                    )).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _action = value!;
-                  });
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Ação',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Título
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Título da Notificação',
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (value) => _title = value ?? '',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Texto
-              TextFormField(
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Texto da Notificação',
-                  hintText: 'Ex: Recebemos sua transferência de R$ 0,01.',
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (value) => _text = value ?? '',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Campo obrigatório';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Botão simular
-              ElevatedButton.icon(
-                onPressed: _isSimulating ? null : _simulateNotification,
-                icon: const Icon(Icons.play_arrow),
-                label: Text(_isSimulating ? 'Simulando...' : 'Simular Notificação'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Ajuda
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Instruções',
-                        style: Theme.of(context).textTheme.titleMedium,
+                      const Text(
+                        'Simular notificação bancária',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _packageController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pacote do app (ex: com.nu.production)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Título da notificação',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _textController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Texto da notificação',
+                          hintText: 'Ex: Recebemos sua transferência de R\$ 0,01.',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CheckboxListTile(
+                              title: const Text('Usar campo de valor separado'),
+                              value: _simulateWithAmount,
+                              onChanged: (val) => setState(() => _simulateWithAmount = val ?? false),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_simulateWithAmount) ...[
+                        TextFormField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: 'Valor (R\$)',
+                            hintText: '0,01',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _simulateNotification,
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Simular Notificação'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_lastResult.isNotEmpty)
+                Card(
+                  color: Colors.green.shade50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Resultado do processamento:',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text(_lastResult),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Instruções:', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       const Text(
-                        '1. Certifique-se de que o app de destino está habilitado na aba "Aplicativos".\n'
-                        '2. Preencha os campos com os dados da notificação que deseja simular.\n'
-                        '3. O valor em R$ será extraído automaticamente do texto pelo parser.\n'
-                        '4. Após simular, a notificação aparecerá na aba "Logs" e será processada como se fosse real.',
+                        '1. Preencha os dados da notificação que deseja simular.\n'
+                        '2. O pacote deve corresponder a um app bancário da whitelist (ex: com.nu.production).\n'
+                        '3. O valor em R\$ será extraído automaticamente do texto pelo parser.\n'
+                        '4. Clique em "Simular Notificação".\n'
+                        '5. O resultado aparecerá acima e a notificação será adicionada aos Logs.',
                         style: TextStyle(fontSize: 14),
                       ),
                     ],
@@ -162,46 +235,5 @@ class _TestScreenState extends State<TestScreen> {
         ),
       ),
     );
-  }
-
-  void _simulateNotification() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      setState(() {
-        _isSimulating = true;
-      });
-
-      // Criar dados da notificação simulada
-      final now = DateTime.now();
-      final notificationData = {
-        'packageName': _selectedPackage,
-        'title': _title,
-        'text': _text,
-        'timestamp': now.millisecondsSinceEpoch,
-        'action': _action,
-        // ID simulado (negativo para não conflitar com IDs reais)
-        'id': -now.millisecondsSinceEpoch,
-      };
-
-      // Enviar para o serviço
-      final notificationService = context.read<NotificationService>();
-      await notificationService.simulateNotification(notificationData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notificação simulada com sucesso!')),
-        );
-        // Limpar campos? Vamos manter para nova simulação
-        _formKey.currentState?.reset();
-        setState(() {
-          _selectedPackage = '';
-          _title = '';
-          _text = '';
-          _action = 'posted';
-          _isSimulating = false;
-        });
-      }
-    }
   }
 }
