@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.macronotify.macro_notify">
 
-    <!-- Permissões necessárias para monitorar notificações -->
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -10,7 +9,6 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:label="MacroNotify"
@@ -30,7 +28,6 @@
             </intent-filter>
         </activity>
 
-        <!-- NotificationListenerService -->
         <service
             android:name=".NotificationListener"
             android:label="MacroNotify"
@@ -41,7 +38,6 @@
             </intent-filter>
         </service>
 
-        <!-- Receiver para BOOT_COMPLETED -->
         <receiver
             android:name=".BootReceiver"
             android:exported="true">
@@ -50,20 +46,8 @@
             </intent-filter>
         </receiver>
 
-        <!-- Receiver para notificações de inicialização -->
-        <receiver
-            android:name=".NotificationReceiver"
-            android:exported="true"
-            android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.NOTIFICATION_POSTED" />
-                <action android:name="android.intent.action.NOTIFICATION_REMOVED" />
-            </intent-filter>
-        </receiver>
-
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-
 </manifest>
