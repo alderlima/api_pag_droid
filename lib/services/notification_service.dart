@@ -85,7 +85,8 @@ class NotificationService extends ChangeNotifier {
       _notifications.removeWhere((n) => n.id == id);
       notifyListeners();
     } catch (e) {
-      debugPrint('Erro ao deletar notificação: $e');
+      debugPrint('❌ Erro ao deletar notificação: $e');
+      rethrow; // Permite que a UI capture e mostre feedback
     }
   }
 
@@ -96,6 +97,7 @@ class NotificationService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Erro ao limpar notificações: $e');
+      rethrow;
     }
   }
 

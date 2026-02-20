@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart'; // para firstWhereOrNull
 import 'notification_parser.dart';
 import 'payment_service.dart';
 import 'notification_service.dart';
@@ -179,6 +180,24 @@ class NotificationProcessor extends ChangeNotifier {
   void _addToHistory(ProcessingResult result) {
     _processingHistory.add(result);
     notifyListeners();
+  }
+
+  /// Retorna o resultado de processamento para uma notificação específica (baseado no hash)
+  ProcessingResult? getProcessingResultForNotification({
+    required String packageName,
+    required String title,
+    required String text,
+    required DateTime timestamp,
+  }) {
+    final hash = NotificationParser.generateNotificationHash(
+      packageName,
+      title,
+      text,
+      timestamp,
+    );
+    return _processingHistory.firstWhereOrNull(
+      (r) => r.payment?.notificationHash == hash,
+    );
   }
 
   List<ProcessingResult> getProcessingHistory() {
