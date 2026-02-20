@@ -1,7 +1,6 @@
-import 'dart:async'; // necessário para StreamController
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
 
@@ -131,31 +130,6 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Erro ao desabilitar app: $e');
     }
-  }
-
-  Future<Map<String, bool>> checkPermissions() async {
-    try {
-      final Map<dynamic, dynamic> result = await platform.invokeMethod('checkPermissions');
-      return {
-        'notificationListener': result['notificationListener'] as bool? ?? false,
-        'postNotifications': result['postNotifications'] as bool? ?? false,
-      };
-    } catch (e) {
-      debugPrint('Erro ao verificar permissões: $e');
-      return {'notificationListener': false, 'postNotifications': false};
-    }
-  }
-
-  Future<void> requestPermissions() async {
-    try {
-      await platform.invokeMethod('requestPermissions');
-    } catch (e) {
-      debugPrint('Erro ao solicitar permissões: $e');
-    }
-  }
-
-  void refreshNotifications() {
-    loadNotifications();
   }
 
   @override
