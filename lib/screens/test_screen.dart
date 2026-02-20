@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
-import '../services/payment_service.dart';
 import '../services/notification_processor.dart';
-import '../models/notification_model.dart';
 
 class TestScreen extends StatefulWidget {
   const TestScreen({Key? key}) : super(key: key);
@@ -43,7 +41,6 @@ class _TestScreenState extends State<TestScreen> {
         );
         return;
       }
-      // Se o usuário preencheu o valor separadamente, substitui ou insere no texto
       if (!text.contains('R\$')) {
         text = 'Recebemos sua transferência de R\$ $amount.';
       }
@@ -59,28 +56,12 @@ class _TestScreenState extends State<TestScreen> {
     final notificationService = context.read<NotificationService>();
     final processor = context.read<NotificationProcessor>();
 
-    // Cria um mapa simulando o evento que viria do EventChannel
-    final fakeData = {
-      'packageName': packageName,
-      'title': title,
-      'text': text,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
-
-    // Injeta diretamente no stream do NotificationService
-    // Nota: Isso requer que o stream seja público ou um método para teste.
-    // Vamos usar o método privado? Melhor criar um método público no NotificationService para testes.
-    // Mas como não podemos modificar o NotificationService agora, vamos simular chamando o processor diretamente,
-    // pulando a verificação de app habilitado? O processor já verifica enabledApps, então precisamos garantir
-    // que o app esteja habilitado na lista.
-    // Vamos adicionar temporariamente à lista de enabledApps se necessário.
-    // Para simplificar, vamos verificar se o package está habilitado e, se não estiver, habilitá-lo automaticamente para o teste.
+    // Garante que o app esteja habilitado para o teste
     final isEnabled = notificationService.enabledApps.any((a) => a.packageName == packageName);
     if (!isEnabled) {
       await notificationService.enableApp(packageName, 'App de Teste');
     }
 
-    // Processa diretamente a notificação
     final result = await processor.processNotification(
       packageName: packageName,
       title: title,
@@ -98,17 +79,13 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
 ''';
     });
 
-    // Recarrega as notificações para aparecer na tela de logs
     notificationService.loadNotifications();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Simulador de Notificações'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Simulador de Notificações')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -121,15 +98,13 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Simular notificação bancária',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Simular notificação bancária',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _packageController,
                         decoration: const InputDecoration(
-                          labelText: 'Pacote do app (ex: com.nu.production)',
+                          labelText: 'Pacote do app',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -137,7 +112,7 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                       TextFormField(
                         controller: _titleController,
                         decoration: const InputDecoration(
-                          labelText: 'Título da notificação',
+                          labelText: 'Título',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -146,7 +121,7 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                         controller: _textController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'Texto da notificação',
+                          labelText: 'Texto',
                           hintText: 'Ex: Recebemos sua transferência de R\$ 0,01.',
                           border: OutlineInputBorder(),
                         ),
@@ -183,16 +158,13 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                           onPressed: _simulateNotification,
                           icon: const Icon(Icons.play_arrow),
                           label: const Text('Simular Notificação'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
+                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
               if (_lastResult.isNotEmpty)
                 Card(
                   color: Colors.green.shade50,
@@ -201,8 +173,7 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Resultado do processamento:',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text('Resultado:', style: TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Text(_lastResult),
                       ],
@@ -215,15 +186,15 @@ Hash: ${result.payment?.notificationHash ?? 'N/A'}
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Instruções:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '1. Preencha os dados da notificação que deseja simular.\n'
-                        '2. O pacote deve corresponder a um app bancário da whitelist (ex: com.nu.production).\n'
-                        '3. O valor em R\$ será extraído automaticamente do texto pelo parser.\n'
+                    children: const [
+                      Text('Instruções:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Text(
+                        '1. Preencha os dados da notificação.\n'
+                        '2. O pacote deve estar na whitelist (ex: com.nu.production).\n'
+                        '3. O valor em R\$ será extraído automaticamente.\n'
                         '4. Clique em "Simular Notificação".\n'
-                        '5. O resultado aparecerá acima e a notificação será adicionada aos Logs.',
+                        '5. O resultado aparecerá e a notificação será adicionada aos Logs.',
                         style: TextStyle(fontSize: 14),
                       ),
                     ],
