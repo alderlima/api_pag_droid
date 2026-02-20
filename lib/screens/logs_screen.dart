@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
-import '../services/notification_processor.dart';
 import '../widgets/notification_card.dart';
 
 class LogsScreen extends StatefulWidget {
@@ -22,14 +21,8 @@ class _LogsScreenState extends State<LogsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<NotificationService, NotificationProcessor>(
-      builder: (context, service, processor, _) {
-        // Filtra apenas notificações de apps habilitados
-        final enabledPackages = service.enabledApps.map((e) => e.packageName).toSet();
-        final filteredNotifications = service.notifications
-            .where((n) => enabledPackages.contains(n.packageName))
-            .toList();
-
+    return Consumer<NotificationService>(
+      builder: (context, service, _) {
         return RefreshIndicator(
           onRefresh: () => service.loadNotifications(),
           child: Column(
@@ -58,12 +51,12 @@ class _LogsScreenState extends State<LogsScreen> {
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             Text(
-                              '${filteredNotifications.length}',
+                              '${service.notifications.length}',
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                           ],
                         ),
-                        if (filteredNotifications.isNotEmpty)
+                        if (service.notifications.isNotEmpty)
                           ElevatedButton.icon(
                             onPressed: () {
                               showDialog(
@@ -80,18 +73,9 @@ class _LogsScreenState extends State<LogsScreen> {
                                         child: const Text('Cancelar'),
                                       ),
                                       TextButton(
-                                        onPressed: () async {
-                                          try {
-                                            await service.clearAllNotifications();
-                                            if (mounted) Navigator.pop(context);
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Erro ao limpar: $e'),
-                                                backgroundColor: Colors.red,
-                                              ),
-                                            );
-                                          }
+                                        onPressed: () {
+                                          service.clearAllNotifications();
+                                          Navigator.pop(context);
                                         },
                                         child: const Text('Limpar'),
                                       ),
@@ -116,7 +100,7 @@ class _LogsScreenState extends State<LogsScreen> {
               Expanded(
                 child: service.isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : filteredNotifications.isEmpty
+                    : service.notifications.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -128,12 +112,12 @@ class _LogsScreenState extends State<LogsScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'Nenhuma notificação de apps monitorados',
+                                  'Nenhuma notificação capturada',
                                   style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Ative aplicativos na aba "Aplicativos"',
+                                  'Selecione aplicativos para monitorar',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -141,37 +125,13 @@ class _LogsScreenState extends State<LogsScreen> {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(8),
-                            itemCount: filteredNotifications.length,
+                            itemCount: service.notifications.length,
                             itemBuilder: (context, index) {
-                              final notification = filteredNotifications[index];
-                              // Obtém o resultado do processamento (se houver)
-                              final result = processor.getProcessingResultForNotification(
-                                packageName: notification.packageName,
-                                title: notification.title,
-                                text: notification.text,
-                                timestamp: DateTime.fromMillisecondsSinceEpoch(notification.timestamp),
-                              );
+                              final notification = service.notifications[index];
                               return NotificationCard(
                                 notification: notification,
-                                processingResult: result,
-                                onDelete: () async {
-                                  try {
-                                    await service.deleteNotification(notification.id);
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Notificação deletada')),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Erro ao deletar: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  }
+                                onDelete: () {
+                                  service.deleteNotification(notification.id);
                                 },
                               );
                             },

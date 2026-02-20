@@ -1,6 +1,7 @@
-import 'dart:async';
+import 'dart:async'; // necessário para StreamController
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/notification_model.dart';
 import '../models/app_model.dart';
 
@@ -85,8 +86,7 @@ class NotificationService extends ChangeNotifier {
       _notifications.removeWhere((n) => n.id == id);
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ Erro ao deletar notificação: $e');
-      rethrow;
+      debugPrint('Erro ao deletar notificação: $e');
     }
   }
 
@@ -97,7 +97,6 @@ class NotificationService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Erro ao limpar notificações: $e');
-      rethrow;
     }
   }
 
@@ -134,21 +133,29 @@ class NotificationService extends ChangeNotifier {
     }
   }
 
-  /// Simula uma notificação para testes
-  Future<void> simulateNotification(Map<String, dynamic> data) async {
-    // Cria um modelo de notificação
-    final notification = NotificationModel.fromMap({
-      ...data,
-      'id': data['id'] ?? DateTime.now().millisecondsSinceEpoch * -1, // ID negativo para simulado
-      'isActive': 1,
-    });
+  Future<Map<String, bool>> checkPermissions() async {
+    try {
+      final Map<dynamic, dynamic> result = await platform.invokeMethod('checkPermissions');
+      return {
+        'notificationListener': result['notificationListener'] as bool? ?? false,
+        'postNotifications': result['postNotifications'] as bool? ?? false,
+      };
+    } catch (e) {
+      debugPrint('Erro ao verificar permissões: $e');
+      return {'notificationListener': false, 'postNotifications': false};
+    }
+  }
 
-    // Adiciona à lista local
-    _notifications.insert(0, notification);
-    notifyListeners();
+  Future<void> requestPermissions() async {
+    try {
+      await platform.invokeMethod('requestPermissions');
+    } catch (e) {
+      debugPrint('Erro ao solicitar permissões: $e');
+    }
+  }
 
-    // Emite no stream para o processador capturar
-    _notificationStreamController.add(data);
+  void refreshNotifications() {
+    loadNotifications();
   }
 
   @override

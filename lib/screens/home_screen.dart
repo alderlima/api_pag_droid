@@ -5,7 +5,6 @@ import 'logs_screen.dart';
 import 'apps_screen.dart';
 import 'settings_screen.dart';
 import 'payments_screen.dart';
-import 'test_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -20,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = const [
     LogsScreen(),
     PaymentsScreen(),
-    TestScreen(),
     AppsScreen(),
     SettingsScreen(),
   ];
@@ -28,7 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> _titles = [
     'Logs',
     'Pagamentos',
-    'Teste',
     'Aplicativos',
     'Configurações'
   ];
@@ -55,14 +52,27 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
-          setState(() => _selectedIndex = index);
+          setState(() {
+            _selectedIndex = index;
+          });
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.notifications), label: 'Logs'),
-          NavigationDestination(icon: Icon(Icons.payment), label: 'Pagamentos'),
-          NavigationDestination(icon: Icon(Icons.science), label: 'Teste'),
-          NavigationDestination(icon: Icon(Icons.apps), label: 'Aplicativos'),
-          NavigationDestination(icon: Icon(Icons.settings), label: 'Configurações'),
+          NavigationDestination(
+            icon: Icon(Icons.notifications),
+            label: 'Logs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.payment),
+            label: 'Pagamentos',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.apps),
+            label: 'Aplicativos',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings),
+            label: 'Configurações',
+          ),
         ],
       ),
     );
