@@ -36,7 +36,6 @@ class NotificationParser {
     'com.caixa', // Caixa
     'com.banco.santander', // Santander
     'com.banco.bbsa.mobile', // Banco do Brasil
-    'com.whatsapp.w4b',
   ];
 
   /// Palavras-chave para identificar notificações de pagamento recebido
