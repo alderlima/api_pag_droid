@@ -1,4 +1,4 @@
-import 'dart:async'; // necessário para StreamSubscription
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'notification_parser.dart';
 import 'payment_service.dart';
@@ -53,6 +53,17 @@ class NotificationProcessor extends ChangeNotifier {
     _notificationSubscription = notificationService.notificationStream.listen(
       (data) async {
         final packageName = data['packageName'] as String? ?? '';
+        
+        // 🔍 Verificar se o app está habilitado pelo usuário
+        final isEnabled = notificationService.enabledApps.any(
+          (app) => app.packageName == packageName
+        );
+
+        if (!isEnabled) {
+          debugPrint('⏭️ Notificação ignorada (app não habilitado): $packageName');
+          return; // Não processa e não adiciona ao histórico
+        }
+
         final title = data['title'] as String? ?? '';
         final text = data['text'] as String? ?? '';
         final timestamp = data['timestamp'] != null
