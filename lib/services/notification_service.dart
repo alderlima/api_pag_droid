@@ -26,22 +26,6 @@ class NotificationService extends ChangeNotifier {
     _listenToNotificationStream();
   }
 
-    // Dentro da classe NotificationService
-    void simulateNotification({
-      required String packageName,
-      required String title,
-      required String text,
-    }) {
-      final data = {
-        'packageName': packageName,
-        'title': title,
-        'text': text,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      };
-      _notificationStreamController.add(data);
-      debugPrint('📢 Notificação simulada adicionada ao stream: $data');
-    }
-
   void _listenToNotificationStream() {
     eventChannel.receiveBroadcastStream().listen((dynamic event) {
       if (event is Map) {
@@ -102,7 +86,7 @@ class NotificationService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('❌ Erro ao deletar notificação: $e');
-      rethrow; // Permite que a UI capture e mostre feedback
+      rethrow;
     }
   }
 
@@ -148,6 +132,23 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Erro ao desabilitar app: $e');
     }
+  }
+
+  /// Simula uma notificação para testes
+  Future<void> simulateNotification(Map<String, dynamic> data) async {
+    // Cria um modelo de notificação
+    final notification = NotificationModel.fromMap({
+      ...data,
+      'id': data['id'] ?? DateTime.now().millisecondsSinceEpoch * -1, // ID negativo para simulado
+      'isActive': 1,
+    });
+
+    // Adiciona à lista local
+    _notifications.insert(0, notification);
+    notifyListeners();
+
+    // Emite no stream para o processador capturar
+    _notificationStreamController.add(data);
   }
 
   @override

@@ -5,7 +5,7 @@ import 'logs_screen.dart';
 import 'apps_screen.dart';
 import 'settings_screen.dart';
 import 'payments_screen.dart';
-import 'test_screen.dart'; // novo
+import 'test_screen.dart'; // <-- import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = const [
     LogsScreen(),
     PaymentsScreen(),
-    TestScreen(), // inserido entre Payments e Apps
+    TestScreen(), // <-- nova tela
     AppsScreen(),
     SettingsScreen(),
   ];
@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Pagamentos',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bug_report), // ícone de teste
+            icon: Icon(Icons.science), // ícone de teste
             label: 'Teste',
           ),
           NavigationDestination(
