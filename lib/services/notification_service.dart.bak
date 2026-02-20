@@ -26,22 +26,6 @@ class NotificationService extends ChangeNotifier {
     _listenToNotificationStream();
   }
 
-    // Dentro da classe NotificationService
-    void simulateNotification({
-      required String packageName,
-      required String title,
-      required String text,
-    }) {
-      final data = {
-        'packageName': packageName,
-        'title': title,
-        'text': text,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      };
-      _notificationStreamController.add(data);
-      debugPrint('📢 Notificação simulada adicionada ao stream: $data');
-    }
-
   void _listenToNotificationStream() {
     eventChannel.receiveBroadcastStream().listen((dynamic event) {
       if (event is Map) {
