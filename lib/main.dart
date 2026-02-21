@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
+import 'screens/debug_screen.dart';
 import 'services/notification_service.dart';
 import 'services/payment_service.dart';
 import 'services/notification_processor.dart';
@@ -59,6 +60,9 @@ class MyApp extends StatelessWidget {
         ),
         themeMode: ThemeMode.system,
         home: const HomeScreen(),
+        routes: {
+          '/debug': (context) => const DebugScreen(),
+        },
       ),
     );
   }
