@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
+import '../services/notification_processor.dart';
 
 class NotificationCard extends StatefulWidget {
   final NotificationModel notification;
+  final ProcessingResult? processingResult;
   final VoidCallback onDelete;
 
   const NotificationCard({
     Key? key,
     required this.notification,
+    this.processingResult,
     required this.onDelete,
   }) : super(key: key);
 
@@ -17,6 +20,25 @@ class NotificationCard extends StatefulWidget {
 
 class _NotificationCardState extends State<NotificationCard> {
   bool _isExpanded = false;
+
+  IconData _getStatusIcon() {
+    if (widget.processingResult == null) return Icons.hourglass_empty;
+    return widget.processingResult!.success ? Icons.check_circle : Icons.error;
+  }
+
+  Color _getStatusColor(BuildContext context) {
+    if (widget.processingResult == null) return Colors.grey;
+    return widget.processingResult!.success
+        ? Colors.green
+        : Theme.of(context).colorScheme.error;
+  }
+
+  String _getStatusTooltip() {
+    if (widget.processingResult == null) return 'Aguardando processamento';
+    return widget.processingResult!.success
+        ? 'Enviado com sucesso: ${widget.processingResult!.message}'
+        : 'Falha no envio: ${widget.processingResult!.message}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,12 +54,26 @@ class _NotificationCardState extends State<NotificationCard> {
                     : Icons.notifications_off,
               ),
             ),
-            title: Text(
-              widget.notification.title.isEmpty
-                  ? 'Sem Título'
-                  : widget.notification.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.notification.title.isEmpty
+                        ? 'Sem Título'
+                        : widget.notification.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Tooltip(
+                  message: _getStatusTooltip(),
+                  child: Icon(
+                    _getStatusIcon(),
+                    color: _getStatusColor(context),
+                    size: 20,
+                  ),
+                ),
+              ],
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,6 +120,26 @@ class _NotificationCardState extends State<NotificationCard> {
                   _buildDetailRow(context, 'Pacote', widget.notification.packageName),
                   _buildDetailRow(context, 'Ação', widget.notification.action),
                   _buildDetailRow(context, 'ID', widget.notification.id.toString()),
+                  if (widget.processingResult != null) ...[
+                    _buildDetailRow(
+                      context,
+                      'Status',
+                      widget.processingResult!.success ? 'Sucesso' : 'Falha',
+                      widget.processingResult!.success ? Colors.green : Colors.red,
+                    ),
+                    _buildDetailRow(
+                      context,
+                      'Mensagem',
+                      widget.processingResult!.message,
+                    ),
+                    if (widget.processingResult!.payment != null) ...[
+                      _buildDetailRow(
+                        context,
+                        'Valor',
+                        'R\$ ${widget.processingResult!.payment!.amount.toStringAsFixed(2)}',
+                      ),
+                    ],
+                  ],
                   const SizedBox(height: 12),
                   if (widget.notification.title.isNotEmpty)
                     _buildDetailSection(context, 'Título', widget.notification.title),
@@ -114,7 +170,7 @@ class _NotificationCardState extends State<NotificationCard> {
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value, [Color? valueColor]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -133,7 +189,9 @@ class _NotificationCardState extends State<NotificationCard> {
               value,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: valueColor,
+                  ),
             ),
           ),
         ],
