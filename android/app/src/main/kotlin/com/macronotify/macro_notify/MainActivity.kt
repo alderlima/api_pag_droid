@@ -25,7 +25,7 @@ class MainActivity : FlutterActivity() {
         private const val PREFS_NAME = "macro_notify_prefs"
         private const val ENABLED_APPS_KEY = "enabled_apps"
 
-
+        var eventSink: EventChannel.EventSink? = null
     }
 
     private lateinit var dbHelper: NotificationDatabaseHelper
@@ -117,12 +117,12 @@ class MainActivity : FlutterActivity() {
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
             object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {
-                    NotificationListener.eventSink = sink
+                    eventSink = sink
                     Log.d(TAG, "EventChannel ouvindo")
                 }
 
                 override fun onCancel(arguments: Any?) {
-                    NotificationListener.eventSink = null
+                    eventSink = null
                     Log.d(TAG, "EventChannel cancelado")
                 }
             }
